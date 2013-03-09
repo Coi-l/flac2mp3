@@ -22,6 +22,7 @@ mp3_dir = 'mp3'
 
 transcode_queue = Queue.Queue()
 copy_queue = Queue.Queue()
+tag_queue = Queue.Queue()
 
 def is_flac_file(file):
     return file.endswith(".flac")
@@ -91,13 +92,34 @@ class ThreadTranscode(threading.Thread):
                         p_lame = subprocess.Popen(lame, stdin=p_flac.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                         p_lame.wait()
                         (o, e) = p_lame.communicate()
-                        self.move_tags(file_pair)
                     else:
                         print "%s already exists, not doing anything" % file_pair[1]
                 except Exception as e:
                     print e
 
                 self.queue.task_done()
+
+#Thread to mirror tags from flac to mp3 files
+class TagsMirror(threading.Thread):
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.queue = queue
+
+    def run(self):
+        while not self.queue.empty():
+            try:
+                file_pair = self.queue.get_nowait()
+            except Exception as e:
+                print e
+                print "Nothing more in the work queue"
+
+            if file_pair:
+                try:
+                    self.move_tags(file_pair)
+                except Exception as e:
+                    print e
+
+            self.queue.task_done()
 
     def move_tags(self, file_pair):
         print "Moving tags from %s to %s" % file_pair
@@ -109,7 +131,6 @@ class ThreadTranscode(threading.Thread):
                 mp3[key] = flac[key]
             except Exception as e:
                 pass
-                #print e
         mp3.save()
 
     def write_default_tag(self, mp3_file_name):
@@ -159,6 +180,18 @@ for i in range(4):
 transcode_queue.join()
 print "Transcoding complete"
 
+print "Moving tags from flac to mp3 files"
+
+for f in audio_file_pairs:
+    print f
+    tag_queue.put(f)
+
+for i in range(4):
+    t = TagsMirror(tag_queue)
+    t.daemon = True
+    t.start()
+
+tag_queue.join()
 
 print "Mirroring other files"
 for i in range(2):
