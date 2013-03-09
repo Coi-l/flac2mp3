@@ -31,6 +31,8 @@ def read_dir(dir):
     files = os.listdir(dir)
     for f in files:
         t = os.path.join(dir, f)
+        if t[0] == '.AppleDouble':
+            continue
         if os.path.isdir(t):
             read_dir(t)
         else:
@@ -183,7 +185,6 @@ print "Transcoding complete"
 print "Moving tags from flac to mp3 files"
 
 for f in audio_file_pairs:
-    print f
     tag_queue.put(f)
 
 for i in range(4):
