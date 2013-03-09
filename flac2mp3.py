@@ -31,7 +31,7 @@ def read_dir(dir):
     files = os.listdir(dir)
     for f in files:
         t = os.path.join(dir, f)
-        if t[0] == '.AppleDouble':
+        if '.AppleDouble' in t:
             continue
         if os.path.isdir(t):
             read_dir(t)
