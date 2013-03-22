@@ -167,6 +167,13 @@ class ThreadMirror(threading.Thread):
             self.queue.task_done()
 
 
+if len(sys.argv) == 3: 
+    flac_dir = sys.argv[1]
+    mp3_dir = sys.argv[2]
+
+print "Flac directory: " + flac_dir
+print "Mp3 directory: " + mp3_dir
+
 read_flac_dir(flac_dir)
 prepare_files_list(flac_dir, mp3_dir)
 prepare_file_queues()
